@@ -1,0 +1,22 @@
+{
+    "Top_K": 10,
+    "Min_Volume": 100000,
+    "Min_Close": 5.0,
+    "Min_Predicted_Return": 0.004,
+    "Transaction_Cost_Rate": 0.001,
+    "Slippage_Rate": 0.001,
+    "Round_Trip_Cost_Rate": 0.004,
+    "Eligible_Rows": 24087,
+    "Eligible_Symbols": 276,
+    "Backtest_Days": 1036,
+    "Trade_Days": 1022,
+    "Average_Daily_Return": -0.0018255035011235754,
+    "Average_Daily_Return_Net": -0.005771449447069521,
+    "Cumulative_Return": -0.9344620748021563,
+    "Cumulative_Return_Net": -0.998925294826676,
+    "Benchmark_Cumulative_Return": -0.9987808535993665,
+    "Hit_Rate": 49.13127413127413,
+    "Sharpe_Ratio": -0.729616137737711,
+    "Sharpe_Ratio_Net": -2.3064289686306148,
+    "Walk_Forward_Folds": 4
+}

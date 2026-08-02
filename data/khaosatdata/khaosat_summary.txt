@@ -1,0 +1,57 @@
+========================================================================
+Dataset overview
+------------------------------------------------------------------------
+Source: F:\Documents\CODE\Python\cv_project\stock\HQTCSDL_stocks\data\dirty\Data_500_stocks_dirty.csv
+Reference symbols: F:\Documents\CODE\Python\cv_project\stock\HQTCSDL_stocks\data\clean\Data_500_stocks_2015-2026.csv
+Valid symbol count: 495
+Rows: 735967
+Columns: 7
+Column list: ['time', 'open', 'high', 'low', 'close', 'volume', 'symbol']
+Missing expected columns: []
+Dtypes: time=str, open=float64, high=float64, low=float64, close=float64, volume=float64, symbol=str
+========================================================================
+Missing values
+------------------------------------------------------------------------
+Rows with any missing: 18513
+Saved: missing_summary.csv, rows_with_missing.csv
+========================================================================
+Duplicates
+------------------------------------------------------------------------
+Duplicate full rows: 14100
+Duplicate rows (symbol+time): 16687
+========================================================================
+Time column
+------------------------------------------------------------------------
+Invalid time values: 0
+Time range: 2015-09-28 07:00:00 -> 2026-06-05 07:00:00
+Saved: invalid_time.csv
+========================================================================
+Symbol column
+------------------------------------------------------------------------
+Invalid symbol values: 5093
+Invalid format symbols: 3075
+Known dirty marker symbols: 4042
+Symbols outside reference: 5093
+Unique symbols: 501
+Saved: invalid_symbol.csv, symbol_counts.csv
+========================================================================
+Numeric columns
+------------------------------------------------------------------------
+Invalid numeric values: 0
+Saved: invalid_numeric_values.csv, numeric_stats.csv
+========================================================================
+Price rules
+------------------------------------------------------------------------
+Rows with non-positive prices: 7520
+Rows with invalid OHLC relations: 27135
+Saved: non_positive_prices.csv, invalid_ohlc_rows.csv
+========================================================================
+Volume rules
+------------------------------------------------------------------------
+Rows with negative volume: 7518
+Rows with non-integer volume: 0
+Saved: negative_volume.csv, non_integer_volume.csv
+========================================================================
+Outliers (IQR)
+------------------------------------------------------------------------
+Saved: outlier_summary.csv and outliers_<column>.csv

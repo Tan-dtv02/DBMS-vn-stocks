@@ -1,0 +1,45 @@
+venv/
+.venv/
+
+# Python cache and init files
+__pycache__/
+*.pyc
+__init__.py
+
+.env
+output_model5/
+models/model5/output_model5/
+
+# CSV files
+# Allow CSVs by default; add explicit ignores for large datasets if needed
+models/model5/output_model5/risk_features.csv
+models/model4/output/benchmark_features.csv
+models/model3/data/raw/features_all.csv
+models/model3/reports/predictions.csv
+
+models/model1/data/raw/features_all.csv
+data/clean/features_all.csv
+reports/walk_forward_predictions.csv
+models/model1/reports/walk_forward_predictions.csv
+models/model1/reports/streamlit_predictions.csv
+models/model1/reports/latest_streamlit_prediction.json
+models/model1/reports/marts/
+# ==========================================
+# CHẶN TOÀN BỘ FILE OUTPUT LỚN CỦA MÔ HÌNH
+# ==========================================
+
+# Chặn toàn bộ file CSV kết quả của Model 4 và Model 5
+models/model4/output/*.csv
+models/model5/output_model5/*.csv
+
+# Chặn toàn bộ các file mô hình đã huấn luyện (.pkl) vì chúng rất nặng và có thể tự train lại
+models/model1/models/*.pkl
+models/model2/models/*.pkl
+models/model3/models/*.pkl
+models/model4/models/*.pkl
+models/model5/models/*.pkl
+
+# Chặn hàng nghìn file ảnh đồ thị sinh ra hàng ngày của Model 4 để tránh tràn bộ nhớ Git
+models/model4/output/charts/
+models/model5/output_model5/charts/
+models/model2/reports

@@ -1,0 +1,5 @@
+lay file bao cao ban ve (tu nguon nao, bao nhieu dong, ban ra sao)
+sau do kiem tra so qua bang pandas
+lam sach nhu nao(doi ten cot, thu tu cot, loai bo null, duplicate)
+luu vao duckdb(tao bang, kieu du lieu)
+tao ui duckdb de truc quan hoa

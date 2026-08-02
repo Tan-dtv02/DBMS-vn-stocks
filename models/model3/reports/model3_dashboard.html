@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Model 3 Trading Signal Dashboard</title>
+  <style>
+    :root {
+      --ink: #18202a;
+      --muted: #5f6c7b;
+      --line: #d9e1e8;
+      --bg: #f5f7f9;
+      --panel: #ffffff;
+      --accent: #2a9d8f;
+      --risk: #d1495b;
+      --warn: #f4a261;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.45;
+    }
+    header {
+      padding: 28px clamp(18px, 4vw, 44px) 18px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+    }
+    header h1 { margin: 0; font-size: 28px; letter-spacing: 0; }
+    header p { margin: 6px 0 0; color: var(--muted); }
+    main { padding: 22px clamp(18px, 4vw, 44px) 40px; }
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+    }
+    .metric-card, .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    .metric-card { padding: 16px; min-height: 116px; }
+    .metric-card p { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+    .metric-card strong { display: block; font-size: 28px; }
+    .metric-card span { display: block; margin-top: 8px; color: var(--muted); font-size: 12px; }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .panel { padding: 18px; overflow: hidden; }
+    .panel h2 { margin: 0 0 14px; font-size: 18px; }
+    .confusion-matrix, .data-table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid var(--line); padding: 10px; text-align: left; }
+    th { color: var(--muted); font-size: 12px; font-weight: 700; }
+    .confusion-matrix td { text-align: center; border: 1px solid #fff; }
+    .confusion-matrix b, .confusion-matrix small { display: block; }
+    .confusion-matrix small { color: var(--muted); margin-top: 3px; }
+    .bar-row {
+      display: grid;
+      grid-template-columns: minmax(92px, 150px) 1fr 72px;
+      gap: 10px;
+      align-items: center;
+      margin: 9px 0;
+      font-size: 13px;
+    }
+    .bar-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .bar-track { height: 12px; background: #e8eef2; border-radius: 999px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 999px; }
+    .line-chart svg { width: 100%; height: auto; display: block; }
+    .line-chart text { fill: var(--muted); font-size: 12px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 14px; color: var(--muted); font-size: 13px; }
+    .legend i, .dist-item i {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      margin-right: 6px;
+      border-radius: 50%;
+    }
+    .distribution-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .dist-card h3 { margin: 0 0 8px; font-size: 15px; }
+    .dist-item {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--line);
+      align-items: center;
+    }
+    .dist-item small { color: var(--muted); }
+    .market-strip {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(120px, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .market-strip span { padding: 12px; border-right: 1px solid var(--line); }
+    .market-strip span:last-child { border-right: 0; }
+    .market-strip b { display: block; color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+    .market-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .market-grid h3 { margin: 0 0 10px; font-size: 15px; }
+    .table-wrap { overflow-x: auto; }
+    .signal-badge {
+      display: inline-flex;
+      align-items: center;
+      min-width: 58px;
+      justify-content: center;
+      padding: 4px 8px;
+      border-radius: 6px;
+      color: var(--badge-color);
+      background: color-mix(in srgb, var(--badge-color) 12%, white);
+      border: 1px solid color-mix(in srgb, var(--badge-color) 26%, white);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .prob-meter {
+      display: grid;
+      grid-template-columns: 72px 48px;
+      align-items: center;
+      gap: 8px;
+      min-width: 128px;
+    }
+    .prob-meter span {
+      display: block;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+    .prob-meter:before {
+      content: "";
+      grid-column: 1;
+      grid-row: 1;
+      height: 8px;
+      border-radius: 999px;
+      background: #e8eef2;
+      z-index: 0;
+    }
+    .prob-meter span { grid-column: 1; grid-row: 1; z-index: 1; }
+    .prob-meter b { font-size: 12px; font-weight: 700; }
+    .insight-list { margin: 0; padding-left: 18px; }
+    .insight-list li { margin: 9px 0; color: var(--ink); }
+    .empty { color: var(--muted); margin: 0; }
+    @media (max-width: 900px) {
+      .metric-grid, .grid-2 { grid-template-columns: 1fr; }
+      .distribution-grid { grid-template-columns: 1fr; }
+      .market-strip, .market-grid { grid-template-columns: 1fr; }
+      .bar-row { grid-template-columns: 96px 1fr 56px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Model 3 Trading Signal Dashboard</h1>
+    <p>XGBoost classifier for SELL / HOLD / BUY signals, generated from the latest files in reports/.</p>
+  </header>
+  <main>
+    <section class="metric-grid"><section class="metric-card"><p>Accuracy</p><strong>56.30%</strong><span>Baseline: 51.59%</span></section><section class="metric-card"><p>BUY Precision</p><strong>67.98%</strong><span>Adjusted BUY rows: 734</span></section><section class="metric-card"><p>SELL Precision</p><strong>65.03%</strong><span>Adjusted SELL rows: 1,993</span></section><section class="metric-card"><p>Macro F1</p><strong>0.4598</strong></section><section class="metric-card"><p>Net Return</p><strong>223.39%</strong><span>After transaction cost and slippage</span></section><section class="metric-card"><p>Net Sharpe</p><strong>1.370</strong><span>Trade days: 353</span></section></section>
+    <section class="grid-2">
+      <div class="panel">
+        <h2>Backtest Curve</h2>
+        <div class="line-chart"><svg viewBox="0 0 780 300" role="img" aria-label="Backtest curve"><line x1="34" y1="266" x2="746" y2="266" stroke="#cfd8dc" /><line x1="34" y1="34" x2="34" y2="266" stroke="#cfd8dc" /><text x="34" y="22">1596.3%</text><text x="34" y="292">-42.1%</text><polyline points="34.00,260.04 35.82,260.04 37.64,260.04 39.46,260.04 41.28,260.04 43.10,260.04 44.93,260.04 46.75,260.04 48.57,260.04 50.39,260.04 52.21,260.04 54.03,260.04 55.85,260.04 57.67,260.04 59.49,260.04 61.31,260.04 63.14,260.50 64.96,260.91 66.78,262.25 68.60,262.25 70.42,262.72 72.24,262.87 74.06,262.66 75.88,262.66 77.70,262.47 79.52,261.79 81.35,261.37 83.17,261.09 84.99,260.80 86.81,260.21 88.63,259.52 90.45,258.63 92.27,258.18 94.09,257.56 95.91,256.92 97.73,256.75 99.55,256.83 101.38,256.73 103.20,255.89 105.02,255.79 106.84,255.26 108.66,255.26 110.48,252.94 112.30,253.59 114.12,251.82 115.94,251.07 117.76,250.84 119.59,250.32 121.41,250.32 123.23,251.40 125.05,249.63 126.87,247.71 128.69,246.46 130.51,248.22 132.33,247.87 134.15,248.03 135.97,248.03 137.80,248.22 139.62,248.98 141.44,247.39 143.26,247.39 145.08,247.39 146.90,247.20 148.72,248.08 150.54,247.47 152.36,247.16 154.18,246.38 156.01,245.73 157.83,245.91 159.65,245.54 161.47,246.44 163.29,244.79 165.11,244.92 166.93,245.27 168.75,245.07 170.57,245.12 172.39,243.45 174.21,241.20 176.04,240.03 177.86,239.55 179.68,238.82 181.50,240.09 183.32,240.92 185.14,241.13 186.96,240.43 188.78,239.62 190.60,242.00 192.42,243.16 194.25,243.16 196.07,243.73 197.89,243.91 199.71,243.91 201.53,241.07 203.35,240.81 205.17,240.18 206.99,240.52 208.81,241.69 210.63,243.93 212.46,242.62 214.28,243.42 216.10,244.52 217.92,244.86 219.74,244.86 221.56,245.58 223.38,245.58 225.20,245.00 227.02,247.02 228.84,247.02 230.66,247.02 232.49,249.13 234.31,249.13 236.13,249.13 237.95,251.35 239.77,251.48 241.59,251.38 243.41,248.70 245.23,245.75 247.05,247.15 248.87,246.27 250.70,248.02 252.52,248.35 254.34,248.08 256.16,247.56 257.98,246.72 259.80,246.27 261.62,244.52 263.44,242.61 265.26,240.58 267.08,240.13 268.91,238.67 270.73,237.12 272.55,235.54 274.37,234.44 276.19,232.56 278.01,231.86 279.83,230.24 281.65,230.87 283.47,230.01 285.29,229.67 287.12,229.46 288.94,228.70 290.76,226.90 292.58,224.05 294.40,221.60 296.22,218.02 298.04,216.63 299.86,218.14 301.68,218.19 303.50,217.06 305.32,217.30 307.15,212.21 308.97,208.95 310.79,210.73 312.61,211.07 314.43,211.37 316.25,211.37 318.07,209.18 319.89,205.77 321.71,205.39 323.53,202.31 325.36,196.72 327.18,198.64 329.00,198.75 330.82,201.51 332.64,201.47 334.46,198.88 336.28,183.98 338.10,182.30 339.92,181.47 341.74,183.92 343.57,181.16 345.39,178.02 347.21,176.31 349.03,177.45 350.85,177.87 352.67,180.93 354.49,182.74 356.31,186.79 358.13,188.62 359.95,188.24 361.77,186.85 363.60,186.94 365.42,177.23 367.24,172.92 369.06,175.47 370.88,177.49 372.70,171.06 374.52,154.22 376.34,153.71 378.16,151.50 379.98,150.12 381.81,146.24 383.63,130.85 385.45,121.52 387.27,118.49 389.09,111.13 390.91,101.36 392.73,88.37 394.55,82.19 396.37,78.29 398.19,77.90 400.02,70.97 401.84,67.27 403.66,69.32 405.48,69.66 407.30,71.19 409.12,92.69 410.94,99.42 412.76,98.47 414.58,105.78 416.40,104.48 418.23,98.31 420.05,90.55 421.87,81.59 423.69,80.95 425.51,86.93 427.33,99.16 429.15,108.47 430.97,119.27 432.79,113.04 434.61,102.14 436.43,103.69 438.26,95.48 440.08,94.38 441.90,102.96 443.72,110.11 445.54,107.69 447.36,104.70 449.18,104.30 451.00,104.49 452.82,102.50 454.64,107.41 456.47,114.16 458.29,131.63 460.11,131.29 461.93,130.18 463.75,138.05 465.57,128.77 467.39,119.59 469.21,120.00 471.03,129.03 472.85,122.42 474.68,121.46 476.50,125.40 478.32,135.95 480.14,123.48 481.96,118.92 483.78,124.95 485.60,148.37 487.42,151.73 489.24,149.59 491.06,156.61 492.88,155.38 494.71,157.03 496.53,164.33 498.35,166.35 500.17,171.65 501.99,175.28 503.81,177.95 505.63,180.28 507.45,187.23 509.27,188.09 511.09,188.23 512.92,182.22 514.74,177.00 516.56,171.29 518.38,165.92 520.20,162.35 522.02,159.69 523.84,159.72 525.66,161.85 527.48,161.85 529.30,158.66 531.13,162.09 532.95,165.75 534.77,167.64 536.59,159.55 538.41,157.50 540.23,154.17 542.05,151.24 543.87,153.77 545.69,158.04 547.51,160.39 549.34,176.98 551.16,184.13 552.98,183.49 554.80,183.49 556.62,181.62 558.44,179.22 560.26,170.20 562.08,154.15 563.90,143.12 565.72,154.54 567.54,144.52 569.37,132.61 571.19,125.95 573.01,125.95 574.83,125.95 576.65,124.40 578.47,126.14 580.29,131.59 582.11,141.95 583.93,135.61 585.75,138.84 587.58,135.69 589.40,129.03 591.22,125.42 593.04,124.34 594.86,130.58 596.68,131.93 598.50,133.74 600.32,136.68 602.14,136.68 603.96,142.10 605.79,146.17 607.61,156.49 609.43,155.99 611.25,153.21 613.07,160.84 614.89,152.43 616.71,146.33 618.53,155.28 620.35,162.41 622.17,170.86 623.99,175.30 625.82,171.21 627.64,169.90 629.46,162.18 631.28,153.70 633.10,145.47 634.92,134.73 636.74,118.54 638.56,113.79 640.38,100.65 642.20,100.65 644.03,102.40 645.85,104.48 647.67,125.35 649.49,137.03 651.31,146.75 653.13,152.50 654.95,162.29 656.77,153.21 658.59,145.34 660.41,143.78 662.24,140.48 664.06,144.33 665.88,154.72 667.70,165.49 669.52,173.92 671.34,177.46 673.16,175.87 674.98,168.82 676.80,166.20 678.62,168.26 680.45,168.16 682.27,168.47 684.09,164.94 685.91,164.72 687.73,166.73 689.55,167.08 691.37,162.36 693.19,152.81 695.01,143.83 696.83,141.73 698.65,139.35 700.48,136.38 702.30,132.41 704.12,128.81 705.94,127.16 707.76,129.90 709.58,126.54 711.40,127.45 713.22,117.37 715.04,107.98 716.86,111.84 718.69,111.84 720.51,81.79 722.33,78.20 724.15,74.93 725.97,69.27 727.79,71.26 729.61,70.53 731.43,81.31 733.25,78.35 735.07,70.18 736.90,60.62 738.72,34.00 740.54,54.47 742.36,80.53 744.18,87.33 746.00,87.33" fill="none" stroke="#2a9d8f" stroke-width="3" stroke-linejoin="round" /><polyline points="34.00,260.04 35.82,260.04 37.64,260.04 39.46,260.04 41.28,260.04 43.10,260.04 44.93,260.04 46.75,260.04 48.57,260.04 50.39,260.04 52.21,260.04 54.03,260.04 55.85,260.04 57.67,260.04 59.49,260.04 61.31,260.04 63.14,260.56 64.96,261.02 66.78,262.41 68.60,262.41 70.42,262.91 72.24,263.11 74.06,262.95 75.88,262.95 77.70,262.81 79.52,262.19 81.35,261.83 83.17,261.61 84.99,261.38 86.81,260.86 88.63,260.26 90.45,259.48 92.27,259.11 94.09,258.58 95.91,258.04 97.73,257.95 99.55,258.09 101.38,258.07 103.20,257.35 105.02,257.33 106.84,256.91 108.66,256.91 110.48,254.86 112.30,255.53 114.12,254.00 115.94,253.41 117.76,253.28 119.59,252.90 121.41,252.90 123.23,253.94 125.05,252.45 126.87,250.84 128.69,249.84 130.51,251.48 132.33,251.27 134.15,251.49 135.97,251.58 137.80,251.84 139.62,252.58 141.44,251.30 143.26,251.30 145.08,251.30 146.90,251.23 148.72,252.08 150.54,251.65 152.36,251.48 154.18,250.91 156.01,250.46 157.83,250.71 159.65,250.49 161.47,251.33 163.29,250.07 165.11,250.27 166.93,250.65 168.75,250.58 170.57,250.71 172.39,249.46 174.21,247.75 176.04,246.91 177.86,246.64 179.68,246.17 181.50,247.29 183.32,248.05 185.14,248.32 186.96,247.88 188.78,247.35 190.60,249.31 192.42,250.31 194.25,250.31 196.07,250.84 197.89,251.07 199.71,251.07 201.53,248.99 203.35,248.90 205.17,248.52 206.99,248.88 208.81,249.86 210.63,251.63 212.46,250.75 214.28,251.44 216.10,252.34 217.92,252.68 219.74,252.68 221.56,253.30 223.38,253.30 225.20,252.95 227.02,254.51 228.84,254.51 230.66,254.51 232.49,256.11 234.31,256.11 236.13,256.11 237.95,257.79 239.77,257.95 241.59,257.94 243.41,256.10 245.23,254.08 247.05,255.15 248.87,254.60 250.70,255.91 252.52,256.21 254.34,256.10 256.16,255.81 257.98,255.30 259.80,255.06 261.62,253.95 263.44,252.73 265.26,251.43 267.08,251.22 268.91,250.32 270.73,249.38 272.55,248.42 274.37,247.79 276.19,246.64 278.01,246.29 279.83,245.33 281.65,245.86 283.47,245.42 285.29,245.31 287.12,245.29 288.94,244.92 290.76,243.87 292.58,242.17 294.40,240.73 296.22,238.58 298.04,237.85 299.86,238.95 301.68,239.12 303.50,238.55 305.32,238.84 307.15,235.82 308.97,233.96 310.79,235.21 312.61,235.58 314.43,235.92 316.25,235.92 318.07,234.74 319.89,232.82 321.71,232.76 323.53,231.07 325.36,227.89 327.18,229.22 329.00,229.47 330.82,231.29 332.64,231.43 334.46,230.08 336.28,221.53 338.10,220.76 339.92,220.49 341.74,222.13 343.57,220.74 345.39,219.15 347.21,218.39 349.03,219.26 350.85,219.72 352.67,221.67 354.49,222.90 356.31,225.37 358.13,226.59 359.95,226.57 361.77,226.00 363.60,226.23 365.42,221.09 367.24,218.94 369.06,220.55 370.88,221.87 372.70,218.60 374.52,209.74 376.34,209.73 378.16,208.80 379.98,208.33 381.81,206.53 383.63,198.66 385.45,194.05 387.27,192.78 389.09,189.26 390.91,184.50 392.73,178.12 394.55,175.31 396.37,173.70 398.19,173.90 400.02,170.76 401.84,169.29 403.66,170.75 405.48,171.34 407.30,172.52 409.12,183.69 410.94,187.41 412.76,187.29 414.58,191.25 416.40,190.94 418.23,188.25 420.05,184.80 421.87,180.80 423.69,180.86 425.51,184.12 427.33,190.37 429.15,195.16 430.97,200.62 432.79,197.96 434.61,193.11 436.43,194.16 438.26,190.63 440.08,190.45 441.90,194.78 443.72,198.41 445.54,197.60 447.36,196.53 449.18,196.66 451.00,197.05 452.82,196.46 454.64,198.99 456.47,202.34 458.29,210.47 460.11,210.57 461.93,210.33 463.75,214.08 465.57,210.22 467.39,206.44 469.21,206.89 471.03,211.10 472.85,208.48 474.68,208.33 476.50,210.29 478.32,215.07 480.14,209.98 481.96,208.29 483.78,211.12 485.60,221.27 487.42,222.89 489.24,222.20 491.06,225.34 492.88,225.02 494.71,225.90 496.53,229.10 498.35,230.11 500.17,232.46 501.99,234.10 503.81,235.34 505.63,236.44 507.45,239.38 509.27,239.87 511.09,240.06 512.92,237.81 514.74,235.89 516.56,233.80 518.38,231.85 520.20,230.62 522.02,229.76 523.84,229.95 525.66,230.95 527.48,230.95 529.30,229.89 531.13,231.39 532.95,232.96 534.77,233.84 536.59,230.94 538.41,230.34 540.23,229.26 542.05,228.34 543.87,229.47 545.69,231.23 547.51,232.28 549.34,238.55 551.16,241.32 552.98,241.22 554.80,241.22 556.62,240.67 558.44,239.93 560.26,236.82 562.08,231.20 563.90,227.42 565.72,231.68 567.54,228.29 569.37,224.26 571.19,222.11 573.01,222.11 574.83,222.11 576.65,221.77 578.47,222.59 580.29,224.70 582.11,228.49 583.93,226.48 585.75,227.79 587.58,226.89 589.40,224.81 591.22,223.77 593.04,223.61 594.86,225.92 596.68,226.56 598.50,227.36 600.32,228.53 602.14,228.53 603.96,230.51 605.79,232.03 607.61,235.60 609.43,235.59 611.25,234.84 613.07,237.48 614.89,234.90 616.71,233.09 618.53,236.13 620.35,238.56 622.17,241.40 623.99,242.94 625.82,241.77 627.64,241.49 629.46,239.20 631.28,236.69 633.10,234.28 634.92,231.11 636.74,226.28 638.56,225.01 640.38,221.18 642.20,221.18 644.03,221.92 645.85,222.76 647.67,229.30 649.49,233.00 651.31,236.08 653.13,237.96 654.95,241.01 656.77,238.46 658.59,236.27 660.41,235.97 662.24,235.15 664.06,236.43 665.88,239.61 667.70,242.86 669.52,245.42 671.34,246.55 673.16,246.20 674.98,244.31 676.80,243.68 678.62,244.39 680.45,244.48 682.27,244.69 684.09,243.82 685.91,243.88 687.73,244.56 689.55,244.77 691.37,243.59 693.19,241.10 695.01,238.79 696.83,238.36 698.65,237.86 700.48,237.20 702.30,236.28 704.12,235.47 705.94,235.19 707.76,236.07 709.58,235.34 711.40,235.73 713.22,233.24 715.04,230.95 716.86,232.13 718.69,232.13 720.51,224.52 722.33,223.79 724.15,223.15 725.97,221.90 727.79,222.62 729.61,222.64 731.43,225.57 733.25,225.02 735.07,223.17 736.90,220.98 738.72,214.56 740.54,219.88 742.36,226.54 744.18,228.40 746.00,228.40" fill="none" stroke="#1d3557" stroke-width="3" stroke-linejoin="round" /><polyline points="34.00,260.42 35.82,260.66 37.64,260.67 39.46,260.75 41.28,260.65 43.10,260.65 44.93,260.77 46.75,260.94 48.57,260.94 50.39,260.89 52.21,260.81 54.03,260.56 55.85,260.29 57.67,260.22 59.49,260.30 61.31,260.63 63.14,261.00 64.96,261.49 66.78,261.87 68.60,261.96 70.42,261.92 72.24,261.84 74.06,261.50 75.88,261.27 77.70,261.11 79.52,260.78 81.35,260.59 83.17,260.44 84.99,260.38 86.81,260.03 88.63,259.77 90.45,259.40 92.27,259.09 94.09,258.63 95.91,258.50 97.73,258.47 99.55,258.56 101.38,258.61 103.20,258.53 105.02,258.67 106.84,258.56 108.66,258.30 110.48,258.05 112.30,257.83 114.12,257.51 115.94,257.32 117.76,257.35 119.59,257.46 121.41,257.56 123.23,257.91 125.05,258.39 126.87,258.87 128.69,259.21 130.51,259.70 132.33,260.24 134.15,260.47 135.97,260.67 137.80,260.84 139.62,260.93 141.44,260.62 143.26,260.31 145.08,260.00 146.90,259.90 148.72,259.73 150.54,259.65 152.36,259.68 154.18,259.46 156.01,259.03 157.83,258.78 159.65,258.57 161.47,258.34 163.29,258.36 165.11,258.38 166.93,258.31 168.75,258.11 170.57,257.82 172.39,257.63 174.21,257.22 176.04,256.85 177.86,256.55 179.68,256.21 181.50,255.94 183.32,255.78 185.14,255.55 186.96,255.38 188.78,255.37 190.60,255.41 192.42,255.63 194.25,255.62 196.07,255.63 197.89,255.67 199.71,255.53 201.53,255.24 203.35,255.37 205.17,255.67 206.99,255.79 208.81,256.07 210.63,256.36 212.46,256.52 214.28,256.66 216.10,256.93 217.92,257.01 219.74,257.08 221.56,257.18 223.38,257.34 225.20,257.64 227.02,258.01 228.84,258.29 230.66,259.67 232.49,261.12 234.31,262.99 236.13,264.56 237.95,265.79 239.77,266.00 241.59,265.90 243.41,265.25 245.23,264.35 247.05,264.16 248.87,264.14 250.70,264.29 252.52,264.43 254.34,264.26 256.16,263.99 257.98,263.87 259.80,263.65 261.62,263.26 263.44,262.83 265.26,262.52 267.08,262.16 268.91,261.75 270.73,261.37 272.55,261.06 274.37,260.73 276.19,260.40 278.01,260.18 279.83,260.03 281.65,260.08 283.47,260.10 285.29,260.12 287.12,260.27 288.94,260.30 290.76,260.07 292.58,259.72 294.40,259.45 296.22,259.07 298.04,258.80 299.86,258.67 301.68,258.63 303.50,258.48 305.32,258.35 307.15,258.19 308.97,258.32 310.79,258.53 312.61,258.74 314.43,258.84 316.25,258.83 318.07,258.52 319.89,258.16 321.71,257.95 323.53,257.73 325.36,257.39 327.18,257.31 329.00,257.31 330.82,257.28 332.64,257.16 334.46,257.04 336.28,256.82 338.10,256.72 339.92,256.45 341.74,256.25 343.57,255.98 345.39,255.66 347.21,255.18 349.03,254.79 350.85,254.30 352.67,253.87 354.49,253.51 356.31,253.27 358.13,252.92 359.95,252.44 361.77,251.93 363.60,251.61 365.42,251.04 367.24,250.39 369.06,249.99 370.88,249.45 372.70,248.48 374.52,248.56 376.34,248.61 378.16,248.54 379.98,248.77 381.81,248.96 383.63,248.16 385.45,247.04 387.27,246.11 389.09,244.89 390.91,243.61 392.73,242.22 394.55,241.16 396.37,240.10 398.19,239.92 400.02,239.50 401.84,238.95 403.66,239.05 405.48,239.48 407.30,240.09 409.12,241.68 410.94,242.68 412.76,243.33 414.58,243.63 416.40,243.04 418.23,241.47 420.05,240.67 421.87,240.26 423.69,241.18 425.51,242.08 427.33,243.23 429.15,244.22 430.97,244.40 432.79,243.29 434.61,242.61 436.43,242.20 438.26,242.04 440.08,242.40 441.90,243.64 443.72,244.60 445.54,244.74 447.36,244.72 449.18,244.89 451.00,244.75 452.82,244.65 454.64,244.91 456.47,245.52 458.29,246.25 460.11,246.04 461.93,246.00 463.75,245.77 465.57,245.05 467.39,244.12 469.21,244.05 471.03,244.09 472.85,244.22 474.68,244.39 476.50,244.99 478.32,246.99 480.14,248.12 481.96,248.82 483.78,249.66 485.60,250.34 487.42,250.06 489.24,249.81 491.06,249.52 492.88,249.28 494.71,248.96 496.53,248.89 498.35,248.74 500.17,249.12 501.99,249.56 503.81,250.45 505.63,251.03 507.45,251.68 509.27,251.81 511.09,251.85 512.92,251.39 514.74,250.32 516.56,249.31 518.38,249.01 520.20,248.89 522.02,248.81 523.84,249.10 525.66,249.66 527.48,249.60 529.30,249.52 531.13,249.40 532.95,249.50 534.77,249.17 536.59,249.10 538.41,248.75 540.23,248.40 542.05,248.11 543.87,248.17 545.69,248.67 547.51,249.54 549.34,250.89 551.16,252.03 552.98,252.41 554.80,252.88 556.62,253.11 558.44,252.56 560.26,251.77 562.08,251.48 563.90,251.14 565.72,251.07 567.54,251.10 569.37,251.22 571.19,251.25 573.01,251.34 574.83,251.31 576.65,251.15 578.47,250.82 580.29,250.62 582.11,250.49 583.93,249.97 585.75,249.30 587.58,248.82 589.40,248.08 591.22,247.15 593.04,246.69 594.86,246.37 596.68,246.46 598.50,246.51 600.32,246.91 602.14,247.87 603.96,248.68 605.79,249.23 607.61,249.97 609.43,250.15 611.25,249.85 613.07,249.19 614.89,248.46 616.71,248.25 618.53,248.95 620.35,249.63 622.17,250.52 623.99,251.13 625.82,251.46 627.64,251.08 629.46,250.24 631.28,249.17 633.10,248.45 634.92,247.62 636.74,246.98 638.56,247.08 640.38,247.48 642.20,248.07 644.03,248.92 645.85,249.95 647.67,252.18 649.49,253.74 651.31,254.58 653.13,255.28 654.95,255.73 656.77,255.11 658.59,254.60 660.41,254.70 662.24,254.82 664.06,255.14 665.88,256.11 667.70,256.79 669.52,257.05 671.34,257.21 673.16,256.92 674.98,256.11 676.80,255.58 678.62,255.36 680.45,255.16 682.27,255.39 684.09,255.68 685.91,256.02 687.73,255.88 689.55,255.74 691.37,255.24 693.19,254.40 695.01,253.58 696.83,253.53 698.65,253.54 700.48,253.55 702.30,253.47 704.12,253.57 705.94,253.67 707.76,253.80 709.58,253.97 711.40,254.36 713.22,254.56 715.04,254.80 716.86,255.00 718.69,255.02 720.51,254.87 722.33,254.85 724.15,254.99 725.97,255.04 727.79,255.25 729.61,255.34 731.43,255.43 733.25,255.34 735.07,255.40 736.90,255.63 738.72,255.95 740.54,256.26 742.36,256.48 744.18,256.58 746.00,256.68" fill="none" stroke="#d1495b" stroke-width="3" stroke-linejoin="round" /></svg><div class="legend"><span><i style="background:#2a9d8f"></i>Gross</span><span><i style="background:#1d3557"></i>Net</span><span><i style="background:#d1495b"></i>Benchmark</span></div></div>
+      </div>
+      <div class="panel">
+        <h2>Signal Distribution</h2>
+        <div class="distribution-grid"><div class="dist-card"><h3>Actual</h3><div class="dist-item"><span><i style="background:#d1495b"></i>SELL</span><b>29,432</b><small>24.8%</small></div><div class="dist-item"><span><i style="background:#6c757d"></i>HOLD</span><b>61,250</b><small>51.6%</small></div><div class="dist-item"><span><i style="background:#2a9d8f"></i>BUY</span><b>28,039</b><small>23.6%</small></div></div><div class="dist-card"><h3>Model</h3><div class="dist-item"><span><i style="background:#d1495b"></i>SELL</span><b>22,379</b><small>18.9%</small></div><div class="dist-item"><span><i style="background:#6c757d"></i>HOLD</span><b>83,796</b><small>70.6%</small></div><div class="dist-item"><span><i style="background:#2a9d8f"></i>BUY</span><b>12,546</b><small>10.6%</small></div></div><div class="dist-card"><h3>Adjusted</h3><div class="dist-item"><span><i style="background:#d1495b"></i>SELL</span><b>1,993</b><small>1.7%</small></div><div class="dist-item"><span><i style="background:#6c757d"></i>HOLD</span><b>115,994</b><small>97.7%</small></div><div class="dist-item"><span><i style="background:#2a9d8f"></i>BUY</span><b>734</b><small>0.6%</small></div></div></div>
+      </div>
+    </section>
+    <section class="panel" style="margin-top:14px">
+      <h2>Market Data</h2>
+      <div class="market-strip"><span><b>Latest date</b>2026-05-20</span><span><b>Symbols</b>203</span><span><b>BUY</b>0</span><span><b>HOLD</b>202</span><span><b>SELL</b>1</span></div><div class="market-grid"><section><h3>Top BUY Candidates / Watchlist</h3><div class="table-wrap"><table class="data-table market-table"><thead><tr><th>Date</th><th>Symbol</th><th>Signal</th><th>Close</th><th>Volume</th><th>P(BUY)</th><th>P(SELL)</th><th>Margin</th></tr></thead><tbody><tr><td>2026-05-20</td><td><b>HIO</b></td><td><span class="signal-badge" style="--badge-color:#6c757d">WATCH</span></td><td>8.00</td><td>8.1K</td><td><div class="prob-meter"><span style="width:46.0%"></span><b>46.0%</b></div></td><td><div class="prob-meter"><span style="width:20.8%"></span><b>20.8%</b></div></td><td>0.251</td></tr><tr><td>2026-05-20</td><td><b>TJC</b></td><td><span class="signal-badge" style="--badge-color:#6c757d">WATCH</span></td><td>11.00</td><td>8.5K</td><td><div class="prob-meter"><span style="width:44.9%"></span><b>44.9%</b></div></td><td><div class="prob-meter"><span style="width:27.8%"></span><b>27.8%</b></div></td><td>0.171</td></tr><tr><td>2026-05-20</td><td><b>CKD</b></td><td><span class="signal-badge" style="--badge-color:#6c757d">WATCH</span></td><td>24.60</td><td>100</td><td><div class="prob-meter"><span style="width:40.9%"></span><b>40.9%</b></div></td><td><div class="prob-meter"><span style="width:28.5%"></span><b>28.5%</b></div></td><td>0.125</td></tr><tr><td>2026-05-20</td><td><b>NDT</b></td><td><span class="signal-badge" style="--badge-color:#6c757d">WATCH</span></td><td>4.50</td><td>12.1K</td><td><div class="prob-meter"><span style="width:40.9%"></span><b>40.9%</b></div></td><td><div class="prob-meter"><span style="width:21.9%"></span><b>21.9%</b></div></td><td>0.190</td></tr><tr><td>2026-05-20</td><td><b>SHN</b></td><td><span class="signal-badge" style="--badge-color:#6c757d">WATCH</span></td><td>3.40</td><td>35.3K</td><td><div class="prob-meter"><span style="width:40.3%"></span><b>40.3%</b></div></td><td><div class="prob-meter"><span style="width:20.3%"></span><b>20.3%</b></div></td><td>0.200</td></tr><tr><td>2026-05-20</td><td><b>MIC</b></td><td><span class="signal-badge" style="--badge-color:#6c757d">WATCH</span></td><td>10.80</td><td>1.7K</td><td><div class="prob-meter"><span style="width:40.2%"></span><b>40.2%</b></div></td><td><div class="prob-meter"><span style="width:23.8%"></span><b>23.8%</b></div></td><td>0.164</td></tr><tr><td>2026-05-20</td><td><b>ILA</b></td><td><span class="signal-badge" style="--badge-color:#6c757d">WATCH</span></td><td>5.30</td><td>5.5K</td><td><div class="prob-meter"><span style="width:38.9%"></span><b>38.9%</b></div></td><td><div class="prob-meter"><span style="width:17.6%"></span><b>17.6%</b></div></td><td>0.213</td></tr><tr><td>2026-05-20</td><td><b>CMN</b></td><td><span class="signal-badge" style="--badge-color:#6c757d">WATCH</span></td><td>67.00</td><td>700</td><td><div class="prob-meter"><span style="width:38.5%"></span><b>38.5%</b></div></td><td><div class="prob-meter"><span style="width:22.4%"></span><b>22.4%</b></div></td><td>0.161</td></tr><tr><td>2026-05-20</td><td><b>EIN</b></td><td><span class="signal-badge" style="--badge-color:#6c757d">WATCH</span></td><td>2.30</td><td>3.8K</td><td><div class="prob-meter"><span style="width:37.8%"></span><b>37.8%</b></div></td><td><div class="prob-meter"><span style="width:19.2%"></span><b>19.2%</b></div></td><td>0.185</td></tr><tr><td>2026-05-20</td><td><b>VPH</b></td><td><span class="signal-badge" style="--badge-color:#6c757d">WATCH</span></td><td>3.47</td><td>67.2K</td><td><div class="prob-meter"><span style="width:37.1%"></span><b>37.1%</b></div></td><td><div class="prob-meter"><span style="width:22.8%"></span><b>22.8%</b></div></td><td>0.144</td></tr></tbody></table></div></section><section><h3>Top SELL / Risk Watchlist</h3><div class="table-wrap"><table class="data-table market-table"><thead><tr><th>Date</th><th>Symbol</th><th>Signal</th><th>Close</th><th>Volume</th><th>P(BUY)</th><th>P(SELL)</th><th>Margin</th></tr></thead><tbody><tr><td>2026-05-20</td><td><b>HKT</b></td><td><span class="signal-badge" style="--badge-color:#d1495b">SELL</span></td><td>21.90</td><td>1.7K</td><td><div class="prob-meter"><span style="width:16.2%"></span><b>16.2%</b></div></td><td><div class="prob-meter"><span style="width:61.0%"></span><b>61.0%</b></div></td><td>-0.447</td></tr><tr><td>2026-05-20</td><td><b>FDC</b></td><td><span class="signal-badge" style="--badge-color:#6c757d">WATCH</span></td><td>24.00</td><td>1.5K</td><td><div class="prob-meter"><span style="width:22.0%"></span><b>22.0%</b></div></td><td><div class="prob-meter"><span style="width:59.3%"></span><b>59.3%</b></div></td><td>-0.373</td></tr><tr><td>2026-05-20</td><td><b>GND</b></td><td><span class="signal-badge" style="--badge-color:#6c757d">WATCH</span></td><td>26.20</td><td>300</td><td><div class="prob-meter"><span style="width:33.3%"></span><b>33.3%</b></div></td><td><div class="prob-meter"><span style="width:51.4%"></span><b>51.4%</b></div></td><td>-0.181</td></tr><tr><td>2026-05-20</td><td><b>PC1</b></td><td><span class="signal-badge" style="--badge-color:#6c757d">WATCH</span></td><td>19.00</td><td>14.80M</td><td><div class="prob-meter"><span style="width:32.1%"></span><b>32.1%</b></div></td><td><div class="prob-meter"><span style="width:47.6%"></span><b>47.6%</b></div></td><td>-0.155</td></tr><tr><td>2026-05-20</td><td><b>TV1</b></td><td><span class="signal-badge" style="--badge-color:#6c757d">WATCH</span></td><td>24.70</td><td>103.9K</td><td><div class="prob-meter"><span style="width:27.4%"></span><b>27.4%</b></div></td><td><div class="prob-meter"><span style="width:45.2%"></span><b>45.2%</b></div></td><td>-0.178</td></tr><tr><td>2026-05-20</td><td><b>SD3</b></td><td><span class="signal-badge" style="--badge-color:#6c757d">WATCH</span></td><td>8.50</td><td>300</td><td><div class="prob-meter"><span style="width:21.8%"></span><b>21.8%</b></div></td><td><div class="prob-meter"><span style="width:44.8%"></span><b>44.8%</b></div></td><td>-0.230</td></tr><tr><td>2026-05-20</td><td><b>HDG</b></td><td><span class="signal-badge" style="--badge-color:#6c757d">WATCH</span></td><td>23.70</td><td>3.24M</td><td><div class="prob-meter"><span style="width:20.7%"></span><b>20.7%</b></div></td><td><div class="prob-meter"><span style="width:44.3%"></span><b>44.3%</b></div></td><td>-0.236</td></tr><tr><td>2026-05-20</td><td><b>VHM</b></td><td><span class="signal-badge" style="--badge-color:#6c757d">WATCH</span></td><td>159.90</td><td>6.82M</td><td><div class="prob-meter"><span style="width:29.0%"></span><b>29.0%</b></div></td><td><div class="prob-meter"><span style="width:43.5%"></span><b>43.5%</b></div></td><td>-0.145</td></tr><tr><td>2026-05-20</td><td><b>IDI</b></td><td><span class="signal-badge" style="--badge-color:#6c757d">WATCH</span></td><td>5.75</td><td>542.6K</td><td><div class="prob-meter"><span style="width:21.8%"></span><b>21.8%</b></div></td><td><div class="prob-meter"><span style="width:43.4%"></span><b>43.4%</b></div></td><td>-0.215</td></tr><tr><td>2026-05-20</td><td><b>VTD</b></td><td><span class="signal-badge" style="--badge-color:#6c757d">WATCH</span></td><td>5.40</td><td>132.8K</td><td><div class="prob-meter"><span style="width:29.6%"></span><b>29.6%</b></div></td><td><div class="prob-meter"><span style="width:41.2%"></span><b>41.2%</b></div></td><td>-0.117</td></tr></tbody></table></div></section></div>
+    </section>
+    <section class="panel" style="margin-top:14px">
+      <h2>Insights For Report</h2>
+      <ul class="insight-list"><li>Adjusted signal accuracy is 52.69%, compared with raw model accuracy 56.30%.</li><li>Backtest net return is 223.39% with net Sharpe 1.370.</li><li>Strongest BUY candidate is BHP with P(BUY) 73.8%.</li><li>Highest-risk SELL signal is AGX with P(SELL) 76.9%.</li></ul>
+    </section>
+    <section class="grid-2">
+      <div class="panel">
+        <h2>Confusion Matrix</h2>
+        <table class="confusion-matrix"><thead><tr><th>Actual / Pred</th><th>SELL</th><th>HOLD</th><th>BUY</th></tr></thead><tbody><tr><th>SELL</th><td style="background: rgba(42, 157, 143, 0.258)"><b>10,285</b><small>34.9% row</small></td><td style="background: rgba(42, 157, 143, 0.336)"><b>16,152</b><small>54.9% row</small></td><td style="background: rgba(42, 157, 143, 0.160)"><b>2,995</b><small>10.2% row</small></td></tr><tr><th>HOLD</th><td style="background: rgba(42, 157, 143, 0.208)"><b>6,548</b><small>10.7% row</small></td><td style="background: rgba(42, 157, 143, 0.800)"><b>50,854</b><small>83.0% row</small></td><td style="background: rgba(42, 157, 143, 0.171)"><b>3,848</b><small>6.3% row</small></td></tr><tr><th>BUY</th><td style="background: rgba(42, 157, 143, 0.194)"><b>5,546</b><small>19.8% row</small></td><td style="background: rgba(42, 157, 143, 0.345)"><b>16,790</b><small>59.9% row</small></td><td style="background: rgba(42, 157, 143, 0.196)"><b>5,703</b><small>20.3% row</small></td></tr></tbody></table>
+      </div>
+      <div class="panel">
+        <h2>Top Feature Importance</h2>
+        <div class="bar-chart"><div class="bar-row"><span title="volatility_20d">volatility_20d</span><div class="bar-track"><div class="bar-fill" style="width:100.00%;background:#2a9d8f"></div></div><b>0.1695</b></div><div class="bar-row"><span title="return_3d">return_3d</span><div class="bar-track"><div class="bar-fill" style="width:68.41%;background:#2a9d8f"></div></div><b>0.1160</b></div><div class="bar-row"><span title="volatility_5d">volatility_5d</span><div class="bar-track"><div class="bar-fill" style="width:56.85%;background:#2a9d8f"></div></div><b>0.0964</b></div><div class="bar-row"><span title="return_1d">return_1d</span><div class="bar-track"><div class="bar-fill" style="width:36.26%;background:#2a9d8f"></div></div><b>0.0615</b></div><div class="bar-row"><span title="daily_range">daily_range</span><div class="bar-track"><div class="bar-fill" style="width:34.79%;background:#2a9d8f"></div></div><b>0.0590</b></div><div class="bar-row"><span title="price_vs_ma20">price_vs_ma20</span><div class="bar-track"><div class="bar-fill" style="width:29.83%;background:#2a9d8f"></div></div><b>0.0506</b></div><div class="bar-row"><span title="volume">volume</span><div class="bar-track"><div class="bar-fill" style="width:27.22%;background:#2a9d8f"></div></div><b>0.0461</b></div><div class="bar-row"><span title="return_5d">return_5d</span><div class="bar-track"><div class="bar-fill" style="width:26.66%;background:#2a9d8f"></div></div><b>0.0452</b></div><div class="bar-row"><span title="close_position">close_position</span><div class="bar-track"><div class="bar-fill" style="width:26.18%;background:#2a9d8f"></div></div><b>0.0444</b></div><div class="bar-row"><span title="volume_ma_5">volume_ma_5</span><div class="bar-track"><div class="bar-fill" style="width:20.01%;background:#2a9d8f"></div></div><b>0.0339</b></div><div class="bar-row"><span title="drawdown_20d">drawdown_20d</span><div class="bar-track"><div class="bar-fill" style="width:18.44%;background:#2a9d8f"></div></div><b>0.0313</b></div><div class="bar-row"><span title="rolling_max_20d">rolling_max_20d</span><div class="bar-track"><div class="bar-fill" style="width:15.07%;background:#2a9d8f"></div></div><b>0.0255</b></div></div>
+      </div>
+    </section>
+    <section class="panel" style="margin-top:14px">
+      <h2>Best Backtest Configurations</h2>
+      <table class="data-table"><thead><tr><th>Top_K</th><th>Min_Volume</th><th>Min_Close</th><th>Min_Buy_Probability</th><th>Cumulative_Return_Net</th><th>Sharpe_Ratio_Net</th><th>Trade_Days</th></tr></thead><tbody><tr><td>20.000</td><td>100000.000</td><td>10.000</td><td>0.350</td><td>300.95%</td><td>1.576</td><td>353.000</td></tr><tr><td>10.000</td><td>100000.000</td><td>10.000</td><td>0.350</td><td>281.83%</td><td>1.527</td><td>353.000</td></tr><tr><td>5.000</td><td>100000.000</td><td>10.000</td><td>0.350</td><td>223.39%</td><td>1.370</td><td>353.000</td></tr><tr><td>20.000</td><td>200000.000</td><td>10.000</td><td>0.350</td><td>195.80%</td><td>1.311</td><td>351.000</td></tr><tr><td>10.000</td><td>200000.000</td><td>10.000</td><td>0.350</td><td>192.39%</td><td>1.297</td><td>351.000</td></tr><tr><td>20.000</td><td>50000.000</td><td>10.000</td><td>0.350</td><td>180.69%</td><td>1.263</td><td>358.000</td></tr><tr><td>10.000</td><td>50000.000</td><td>10.000</td><td>0.350</td><td>161.30%</td><td>1.197</td><td>358.000</td></tr><tr><td>5.000</td><td>50000.000</td><td>10.000</td><td>0.350</td><td>144.87%</td><td>1.132</td><td>358.000</td></tr></tbody></table>
+    </section>
+  </main>
+</body>
+</html>

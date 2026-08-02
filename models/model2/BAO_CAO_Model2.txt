@@ -1,0 +1,214 @@
+MODEL 2 - FUTURE RETURN PREDICTION MODEL
+
+====================================================
+
+1. TỔNG QUAN BÀI TOÁN VÀ MỤC TIÊU
+   ====================================================
+
+Bài toán đặt ra là dự đoán lợi suất của cổ phiếu trong 5 ngày giao dịch tiếp theo dựa trên dữ liệu lịch sử giá và khối lượng giao dịch.
+
+Đầu ra của mô hình là biến:
+
+future_return_5d
+
+được tính theo công thức:
+
+(close_t+5 / close_t) - 1
+
+Mục tiêu:
+
+* Hỗ trợ nhà đầu tư đánh giá tiềm năng tăng trưởng ngắn hạn của cổ phiếu.
+* Cung cấp dữ liệu đầu vào cho hệ thống dashboard và phân tích đầu tư.
+* Xây dựng data mart phục vụ khai thác insight.
+
+====================================================
+2. DỮ LIỆU ĐẦU VÀO VÀ KỸ NGHỆ ĐẶC TRƯNG
+=======================================
+
+Nguồn dữ liệu:
+
+* vnstock
+* ClickHouse
+
+Dữ liệu cơ bản:
+
+* symbol
+* trading_date
+* open
+* high
+* low
+* close
+* volume
+* encode_sector
+
+Các nhóm đặc trưng:
+
+1. Momentum Features
+
+* return_1d
+* return_3d
+* return_5d
+* return_10d
+* return_20d
+
+2. Trend Features
+
+* ma_5
+* ma_20
+* ma_50
+* price_vs_ma20
+* ma5_vs_ma20
+
+3. Volatility Features
+
+* volatility_5d
+* volatility_20d
+* volatility_change
+* drawdown_20d
+
+4. Volume Features
+
+* volume_ma_5
+* volume_ma_20
+* volume_ratio_5_20
+* volume_change_1d
+
+5. Candlestick Features
+
+* daily_range
+* body_ratio
+* close_position
+
+====================================================
+3. KIẾN TRÚC MÔ HÌNH VÀ THUẬT TOÁN
+==================================
+
+Thuật toán:
+
+LightGBM Regressor
+
+Lý do lựa chọn:
+
+* Huấn luyện nhanh.
+* Khả năng xử lý dữ liệu lớn tốt.
+* Hiệu quả cao với dữ liệu dạng bảng.
+* Tự động đánh giá Feature Importance.
+
+Biến đầu ra:
+
+future_return_5d
+
+Loại bài toán:
+
+Regression
+
+====================================================
+4. QUY TRÌNH HUẤN LUYỆN VÀ ĐÁNH GIÁ
+===================================
+
+Bước 1:
+
+Load dữ liệu từ ClickHouse.
+
+Bước 2:
+
+Tiền xử lý dữ liệu.
+
+Bước 3:
+
+Tách tập Train và Test theo thời gian.
+
+Bước 4:
+
+Huấn luyện LightGBM Regressor.
+
+Bước 5:
+
+Dự đoán trên tập Test.
+
+Bước 6:
+
+Đánh giá mô hình.
+
+Các chỉ số:
+
+* MAE
+* RMSE
+* R² Score
+* MAPE
+
+Bước 7:
+
+Backtest chiến lược đầu tư dựa trên kết quả dự đoán.
+
+====================================================
+5. TÍCH HỢP HỆ THỐNG VÀ VẬN HÀNH
+================================
+
+Mô hình được tích hợp trong pipeline phân tích cổ phiếu.
+
+Luồng xử lý:
+
+ClickHouse
+
+↓
+
+Feature Engineering
+
+↓
+
+Model Training
+
+↓
+
+Prediction
+
+↓
+
+Evaluation
+
+↓
+
+Backtest
+
+↓
+
+Data Mart
+
+↓
+
+Dashboard
+
+Data Mart:
+
+mart_future_return_prediction
+
+Dashboard:
+
+reports/model2_dashboard.html
+
+====================================================
+6. HẠN CHẾ VÀ HƯỚNG CẢI TIẾN
+============================
+
+Hạn chế:
+
+* Chỉ sử dụng dữ liệu giá và khối lượng.
+* Chưa sử dụng dữ liệu tin tức.
+* Chưa sử dụng dữ liệu tài chính doanh nghiệp.
+* Chưa tối ưu tham số bằng Hyperparameter Tuning.
+
+Hướng cải tiến:
+
+* Bổ sung dữ liệu cơ bản doanh nghiệp.
+* Bổ sung dữ liệu sentiment từ tin tức.
+* Áp dụng Walk Forward Validation.
+* Tối ưu tham số bằng Optuna.
+* Thử nghiệm XGBoost và CatBoost.
+* Xây dựng hệ thống dự báo theo từng nhóm ngành.
+
+====================================================
+KẾT LUẬN
+========
+
+Model 2 thực hiện dự đoán lợi suất cổ phiếu trong 5 ngày tiếp theo bằng LightGBM Regressor. Kết quả được lưu vào Data Mart và trực quan hóa thông qua Dashboard nhằm hỗ trợ phân tích và ra quyết định đầu tư.

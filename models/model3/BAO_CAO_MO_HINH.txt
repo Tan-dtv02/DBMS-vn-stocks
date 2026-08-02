@@ -1,0 +1,393 @@
+BAO CAO MO HINH PHAN LOAI TIN HIEU GIAO DICH CHUNG KHOAN
+Model 3 - XGBoost Classifier
+
+Ngay cap nhat bao cao: 01/06/2026
+Nguon du lieu moi nhat: ClickHouse Cloud - stock.features_all
+
+
+1. TONG QUAN BAI TOAN VA MUC TIEU
+
+Muc tieu cua de tai la xay dung mot he thong hoc may de phan loai tin hieu giao dich chung khoan thanh 3 nhom:
+
+- SELL: tin hieu ban hoac can giam rui ro.
+- HOLD: tin hieu nam giu, chua co loi the ro rang.
+- BUY: tin hieu mua khi mo hinh nhan thay xac suat tang gia cao hon.
+
+Bai toan duoc thiet ke duoi dang phan loai da lop. Dau vao la du lieu gia, khoi luong va cac chi bao ky thuat cua tung ma co phieu theo tung ngay giao dich. Dau ra la tin hieu SELL / HOLD / BUY.
+
+De phu hop voi bai toan giao dich, he thong khong chi danh gia mo hinh bang Accuracy ma con danh gia chat luong tin hieu hanh dong:
+
+- Accuracy: do dung tong the tren ca 3 lop SELL / HOLD / BUY.
+- BUY Precision: trong cac tin hieu BUY, co bao nhieu tin hieu dung la BUY.
+- SELL Precision: trong cac tin hieu SELL, co bao nhieu tin hieu dung la SELL.
+- Backtest metrics: loi nhuan, Sharpe, hit rate va chi phi giao dich.
+
+Ket qua tong quan sau khi chay pipeline moi nhat:
+
+- Accuracy: 56.30%
+- Baseline Accuracy: 51.59%
+- Macro F1-score: 0.4598
+- Macro Precision: 0.5070
+- Macro Recall: 0.4610
+- BUY Precision sau loc tin hieu chat: 67.98%
+- SELL Precision sau loc tin hieu chat: 65.03%
+- Adjusted Accuracy sau loc tin hieu: 52.69%
+
+Mo hinh co them lop loc tin hieu dua tren xac suat du doan. Thay vi lay moi du doan BUY / SELL cua model, he thong chi giu tin hieu hanh dong khi model co do tu tin cao.
+
+Nguong tin hieu hien tai:
+
+- SIGNAL_MIN_ACTION_PROBABILITY = 0.60
+- SIGNAL_MIN_ACTION_MARGIN = 0.00
+
+Y nghia:
+
+- BUY chi duoc chap nhan khi P(BUY) >= 60% va P(BUY) >= P(SELL).
+- SELL chi duoc chap nhan khi P(SELL) >= 60% va P(SELL) >= P(BUY).
+- Cac truong hop con lai duoc dua ve HOLD de tranh tin hieu yeu hoac model con phan van.
+
+Viec siet nguong lam so luong tin hieu BUY / SELL giam xuong, nhung precision cua cac tin hieu hanh dong tang len ro ret. Day la cach phu hop hon voi ung dung giao dich, vi tin hieu it nhung dang tin cay thuong co gia tri hon tin hieu nhieu nhung nhieu nhieu.
+
+
+2. DU LIEU DAU VAO VA KY NGHE DAC TRUNG (DATA INPUT & FEATURE ENGINEERING)
+
+He thong hien chi su dung nguon du lieu ClickHouse cho model3:
+
+- ClickHouse: stock.features_all
+
+Lan chay moi nhat su dung ClickHouse Cloud:
+
+- Host: cvzq3t560s.ap-southeast-1.aws.clickhouse.cloud
+- Database: stock
+- Table: features_all
+- User: default
+- Port: 8443
+- Secure: true
+
+Thong tin tap test sau khi tien xu ly va chia theo thoi gian:
+
+- So dong prediction tren tap test: 118,721
+- Khoang thoi gian test: 2024-10-18 den 2026-05-20
+- So ma chung khoan trong tap test: 458 ma
+
+Nhom cot du lieu chinh:
+
+- trading_date: ngay giao dich
+- symbol: ma chung khoan
+- open, high, low, close: gia mo cua, cao nhat, thap nhat va dong cua
+- volume: khoi luong giao dich
+- created_at: thoi diem tao du lieu
+
+Nhom dac trung loi nhuan va dong luc gia:
+
+- return_1d
+- return_3d
+- return_5d
+- return_10d
+- return_20d
+
+Nhom dac trung xu huong:
+
+- ma_5
+- ma_20
+- ma_50
+- price_vs_ma20
+- ma5_vs_ma20
+
+Nhom dac trung thanh khoan:
+
+- volume_ma_5
+- volume_ma_20
+- volume_ratio_5_20
+- volume_change_1d
+
+Nhom dac trung bien dong va rui ro:
+
+- volatility_5d
+- volatility_20d
+- volatility_change
+- rolling_max_20d
+- drawdown_20d
+
+Nhom dac trung hanh vi trong ngay:
+
+- daily_range
+- body_ratio
+- close_position
+
+Nhan muc tieu duoc tao bang loi nhuan tuong lai sau 5 ngay giao dich:
+
+target_return = target_close / close - 1
+
+Quy tac gan nhan:
+
+- SELL neu target_return <= -2.5%
+- HOLD neu -2.5% < target_return < 2.5%
+- BUY neu target_return >= 2.5%
+
+Cac feature quan trong nhat theo lan train moi nhat:
+
+- volatility_20d: 0.1695
+- return_3d: 0.1160
+- volatility_5d: 0.0964
+- return_1d: 0.0615
+- daily_range: 0.0590
+- price_vs_ma20: 0.0506
+- volume: 0.0461
+- return_5d: 0.0452
+- close_position: 0.0444
+- volume_ma_5: 0.0339
+
+Nhan xet:
+
+Nhom feature quan trong tap trung vao bien dong, loi nhuan gan day, vi tri gia dong cua va quan he cua gia voi cac vung ky thuat. Dieu nay hop ly voi bai toan du doan tin hieu ngan han, vi bien dong va dong luc gia gan day thuong anh huong truc tiep den xac suat tang/giam trong 5 ngay tiep theo.
+
+
+3. KIEN TRUC MO HINH VA THUAT TOAN
+
+Mo hinh chinh duoc su dung la XGBoost Classifier.
+
+XGBoost la thuat toan gradient boosting dua tren cay quyet dinh, phu hop voi du lieu dang bang va cac feature ky thuat. Mo hinh co kha nang hoc quan he phi tuyen, ket hop nhieu cay quyet dinh yeu thanh mo hinh manh hon, dong thoi cung cap feature importance de giai thich ket qua.
+
+Bai toan duoc cau hinh thanh phan loai 3 lop:
+
+- 0: SELL
+- 1: HOLD
+- 2: BUY
+
+Tham so mo hinh:
+
+- n_estimators: 1000
+- learning_rate: 0.02
+- max_depth: 4
+- min_child_weight: 3
+- subsample: 0.8
+- colsample_bytree: 0.8
+- reg_alpha: 0.1
+- reg_lambda: 1.0
+- objective: multi:softprob
+- eval_metric: mlogloss
+- num_class: 3
+- random_state: 42
+- n_jobs: -1
+
+Dau ra cua XGBoost gom nhan du doan va xac suat cho tung lop:
+
+- sell_probability
+- hold_probability
+- buy_probability
+
+He thong su dung cac xac suat nay de tao them tin hieu sau loc:
+
+- predicted_signal: nhan goc cua model.
+- adjusted_signal: tin hieu sau khi loc theo xac suat va margin.
+
+Khac biet giua prob va margin:
+
+- prob la xac suat model gan cho mot tin hieu. Vi du P(BUY) = 0.60 nghia la model tin BUY voi muc 60%.
+- margin la do chenh giua BUY va SELL. Cong thuc cho tin hieu BUY la margin = P(BUY) - P(SELL).
+
+Trong cau hinh hien tai, he thong dung nguong P >= 60%. Muc nay giup loai bo cac tin hieu hanh dong yeu va giu lai cac tin hieu co do tu tin cao hon.
+
+
+4. QUY TRINH HUAN LUYEN VA DANH GIA
+
+Quy trinh huan luyen trong main.py:
+
+1. Doc du lieu tu ClickHouse Cloud bang bang stock.features_all.
+2. Tien xu ly du lieu va chuyen cac cot so ve dung dinh dang.
+3. Tao target_return theo horizon 5 ngay.
+4. Gan nhan SELL / HOLD / BUY theo nguong -2.5% va +2.5%.
+5. Chia du lieu theo thoi gian thanh train, validation va test.
+6. Huan luyen XGBoost Classifier tren train set.
+7. Theo doi validation set va dung early stopping de giam overfitting.
+8. Danh gia tren test set.
+9. Tao prediction, prediction accuracy, feature importance va backtest.
+10. Luu model va bao cao vao thu muc models va reports.
+
+Cach chia du lieu:
+
+- Train set: 70%
+- Validation set: 15%
+- Test set: 15%
+
+Viec chia theo thu tu thoi gian giup tranh ro ri du lieu tuong lai vao qua trinh huan luyen.
+
+Moc thoi gian moi nhat:
+
+- Validation bat dau tu ngay: 2023-03-27
+- Test bat dau tu ngay: 2024-10-18
+
+Ket qua danh gia tren test set:
+
+- Accuracy: 56.30%
+- Macro Precision: 0.5070
+- Macro Recall: 0.4610
+- Macro F1-score: 0.4598
+- Baseline Accuracy: 51.59%
+- Baseline Label: HOLD
+
+Confusion Matrix cua model goc:
+
+                    Predict SELL    Predict HOLD    Predict BUY
+True SELL              10285           16152            2995
+True HOLD               6548           50854            3848
+True BUY                5546           16790            5703
+
+Nhan xet:
+
+Model co Accuracy cao hon baseline va dat muc 56.30% sau khi mo rong vung HOLD len +/-2.5%. Cach gan nhan moi lam giam nhieu mau bien dong nho bi nhieu, giup model tap trung hon vao cac tin hieu tang/giam ro rang.
+
+Ket qua sau khi loc theo nguong P >= 60%:
+
+- BUY Precision sau loc: 67.98%.
+- SELL Precision sau loc: 65.03%.
+- Adjusted Accuracy: 52.69%.
+- Adjusted Macro Precision: 0.6180.
+
+Adjusted Accuracy thap hon Accuracy goc vi mot phan du doan khong du tu tin duoc chuyen ve HOLD. Tuy nhien, muc tieu cua adjusted_signal khong phai chi toi da hoa accuracy tong the, ma la tang do tin cay cua cac tin hieu hanh dong BUY / SELL.
+
+Backtest chien luoc:
+
+- Moi ngay chon toi da 5 ma co xac suat BUY cao nhat.
+- Chi xet ma co volume toi thieu 100,000.
+- Chi xet ma co gia dong cua toi thieu 10.0.
+- Chi mua khi P(BUY) >= 0.35.
+- Co tinh transaction cost va slippage.
+
+Ket qua backtest moi nhat:
+
+- So dong du dieu kien: 26,467
+- So ma du dieu kien: 197
+- So ngay backtest: 392
+- So ngay co giao dich: 353
+- Average Daily Return truoc phi: 0.7746%/ngay
+- Average Daily Return sau phi: 0.4144%/ngay
+- Cumulative Return truoc phi: 1219.67%
+- Cumulative Return sau phi: 223.39%
+- Benchmark Cumulative Return: 23.72%
+- Hit Rate: 52.55%
+- Sharpe Ratio truoc phi: 2.5577
+- Sharpe Ratio sau phi: 1.3697
+
+Nhan xet backtest:
+
+Voi nguong backtest moi P(BUY) >= 35%, top_k = 5 va loc gia dong cua toi thieu 10.0, chien luoc co 353 ngay giao dich va loi nhuan sau phi duong. Nguong 60% van phu hop de hien thi tin hieu co do tu tin cao tren dashboard, con nguong backtest duoc ha xuong de can bang giua so luong co hoi va loi nhuan sau phi.
+
+
+5. TICH HOP HE THONG VA VAN HANH
+
+He thong duoc to chuc thanh cac module:
+
+- src/data_loader.py: doc du lieu tu ClickHouse.
+- src/preprocessing.py: tien xu ly, tao target va chia train/validation/test.
+- src/train_model.py: huan luyen va luu XGBoost model.
+- src/evaluate.py: danh gia mo hinh, tao prediction va metrics.
+- src/signal_decision.py: loc tin hieu theo xac suat va margin de tao adjusted_signal.
+- src/backtest.py: backtest chien luoc top-k.
+- src/predict.py: du doan tin hieu moi nhat cho tung ma.
+- dashboard_model3.py: tao dashboard HTML phuc vu bao cao.
+- main.py: pipeline tong the tu doc du lieu den luu ket qua.
+
+Ket qua dau ra:
+
+- models/trading_signal_xgb_classifier.pkl
+- reports/metrics.json
+- reports/predictions.csv
+- reports/prediction_accuracy.csv
+- reports/backtest.csv
+- reports/backtest_metrics.json
+- reports/backtest_sweep.csv
+- reports/feature_importance.csv
+- reports/model3_dashboard.html
+- reports/mart_model3_trading_signals.csv
+- reports/mart_model3_signal_summary.csv
+- reports/mart_model3_backtest_daily.csv
+- reports/mart_model3_metrics.csv
+- reports/model3_daily_insights.csv
+
+Bo sung mart/insights cho dashboard:
+
+- mart_model3_trading_signals: luu tin hieu predicted_signal, adjusted_signal va xac suat SELL/HOLD/BUY theo tung symbol/ngay.
+- mart_model3_signal_summary: tong hop so BUY/HOLD/SELL theo ngay va sector; encode_sector duoc giu de join voi bang mapping nganh.
+- mart_model3_backtest_daily: chuan hoa ket qua backtest theo ngay de dashboard doc truc tiep.
+- mart_model3_metrics: chuyen metrics.json va backtest_metrics.json thanh bang metric dang long-format.
+- model3_daily_insights: sinh insight co cau truc cho ngay moi nhat, gom so BUY/SELL manh, top BUY probability, top SELL risk, accuracy va net return.
+
+Ghi chu khoa chinh/khoa ngoai logic:
+
+- predictions.csv: PK logic (trading_date, symbol); FK logic toi stock.features_all(trading_date, symbol), stock.stock_symbols(symbol) va bang mapping nganh qua encode_sector neu co.
+- prediction_accuracy.csv: PK logic (date, symbol); FK logic toi predictions.csv(future_trading_date, symbol).
+- backtest.csv: PK logic trading_date; selected_symbols la danh sach chuoi nen neu can FK chuan thi tach thanh bang chi tiet (trading_date, symbol).
+- mart_model3_trading_signals.csv: PK logic (model_name, trading_date, symbol); FK logic toi stock.features_all, stock.stock_symbols va bang mapping nganh.
+- mart_model3_signal_summary.csv: PK logic (model_name, trading_date, sector); FK logic toi bang mapping nganh qua sector/encode_sector.
+- mart_model3_backtest_daily.csv: PK logic (model_name, trading_date); FK logic toi ngay giao dich trong stock.features_all.
+- mart_model3_metrics.csv: PK logic (model_name, metric_group, metric_name, created_at); FK logic toi bang danh muc model neu co.
+- model3_daily_insights.csv: PK logic (insight_date, insight_type, source_model, metric_name, symbol, sector); FK logic toi bang model, symbol va sector neu cac gia tri nay khac rong.
+- Chi tiet schema xem file MODEL3_SCHEMA.md.
+
+Dashboard hien tai gom:
+
+- Tong quan chi so Accuracy, BUY Precision, SELL Precision, Macro F1, Net Return va Sharpe.
+- Backtest Curve de xem loi nhuan tich luy.
+- Signal Distribution gom Actual, Model va Adjusted.
+- Market Data hien danh sach top BUY candidates/watchlist va top SELL/risk watchlist theo ngay moi nhat.
+- Probability bar cho P(BUY) va P(SELL).
+- Insights For Report de tom tat cac diem co the dua vao bao cao.
+- Feature Importance va Confusion Matrix.
+
+Quy trinh van hanh voi ClickHouse:
+
+1. Cau hinh bien moi truong ket noi ClickHouse.
+2. Chay python main.py de train, evaluate va backtest lai.
+3. Chay python dashboard_model3.py de tao dashboard bao cao.
+4. Mo reports/model3_dashboard.html de xem ket qua truc quan.
+
+Bien moi truong can cau hinh:
+
+- CLICKHOUSE_HOST=cvzq3t560s.ap-southeast-1.aws.clickhouse.cloud
+- CLICKHOUSE_PORT=8443
+- CLICKHOUSE_USERNAME=default
+- CLICKHOUSE_PASSWORD=<password>
+- CLICKHOUSE_DATABASE=stock
+- MODEL3_CLICKHOUSE_FEATURES_TABLE=features_all
+- CLICKHOUSE_SECURE=true
+
+Mat khau ClickHouse khong duoc ghi vao source code, bao cao cong khai hoac GitHub. Khi can chay pipeline, nen set password trong terminal/session hoac dung secret manager.
+
+Trong van hanh thuc te, nen uu tien adjusted_signal thay vi predicted_signal, vi adjusted_signal da loc bot cac du doan yeu va giup tang precision cua tin hieu hanh dong.
+
+
+6. HAN CHE VA HUONG CAI TIEN
+
+Han che:
+
+- Accuracy tong the da tang len 56.30%, nhung van can danh gia them bang walk-forward de tranh toi uu qua muc tren mot tap test co dinh.
+- Mo hinh con nham lan dang ke giua BUY va SELL.
+- Lop HOLD da rong hon voi nguong -2.5% den +2.5%, nen accuracy tang nhung so tin hieu BUY/SELL ro rang giam.
+- Backtest phu thuoc manh vao nguong P(BUY), top_k va bo loc thanh khoan/gia.
+- Hit Rate trong backtest con thap neu tinh tren toan bo ngay backtest, do chien luoc chi giao dich vao mot phan so ngay.
+- Du lieu chu yeu la gia, khoi luong va chi bao ky thuat, chua co tin tuc, bao cao tai chinh, dong tien nganh hay chi so thi truong chung.
+- Cac nguong hien tai duoc chon dua tren du lieu da co, can can than de tranh overfitting khi ap dung vao tuong lai.
+
+Huong cai tien:
+
+- Toi uu nguong BUY / SELL bang walk-forward validation thay vi chi xem tren mot tap test co dinh.
+- Thu nghiem cac nguong nhu P >= 0.55, P >= 0.60, P >= 0.65 de can bang giua precision va so luong tin hieu.
+- Tach 2 muc nguong: nguong dashboard de hien thi tin hieu chat, va nguong backtest de toi uu loi nhuan sau phi.
+- Them feature ky thuat nhu RSI, MACD, Bollinger Band, ADX, ATR va momentum theo nganh.
+- Them feature ve thi truong chung nhu VNINDEX return, trend, volatility va thanh khoan toan thi truong.
+- Loc bo co phieu thanh khoan qua thap hoac co du lieu bat thuong.
+- Thu nghiem model rieng cho BUY va SELL thay vi chi dung mot model 3 lop.
+- Thu nghiem LightGBM, CatBoost hoac ensemble de so sanh voi XGBoost.
+- Toi uu chien luoc backtest theo tan suat giao dich, chi phi, stop-loss, take-profit va ty trong danh muc.
+- Kiem tra do on dinh cua mo hinh qua nhieu giai doan thi truong khac nhau.
+- Them bao cao risk management: maximum drawdown, turnover, average holding return, win/loss ratio.
+
+Ket luan:
+
+Model 3 da hoan thanh pipeline tu du lieu ClickHouse, feature engineering, huan luyen, danh gia, backtest den dashboard bao cao. Sau khi mo rong nguong gan nhan thanh SELL <= -2.5%, HOLD trong khoang -2.5% den +2.5% va BUY >= +2.5%, mo hinh dat Accuracy 56.30%, cao hon baseline 51.59%.
+
+Khi them lop loc xac suat voi nguong P >= 60%, BUY Precision dat 67.98% va SELL Precision dat 65.03%. Dieu nay phu hop voi muc tieu hien thi tin hieu giao dich co do tin cay cao hon.
+
+Backtest mac dinh moi su dung top_k = 5, min_close = 10.0 va P(BUY) >= 35%, tao loi nhuan tich luy sau phi 223.39% tren tap test hien tai. Ket qua nay tot hon cau hinh cu, nhung truoc khi ap dung vao giao dich thuc te van can danh gia walk-forward, kiem tra overfitting, bo sung feature thi truong/nganh va danh gia rui ro day du hon.

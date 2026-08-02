@@ -1,0 +1,9 @@
+pandas
+numpy
+scikit_learn
+xgboost
+joblib
+matplotlib
+lightgbm
+clickhouse-connect
+python-dotenv

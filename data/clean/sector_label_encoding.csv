@@ -1,0 +1,20 @@
+sector,encode_sector
+Industrial Goods & Services,0
+Food & Beverage,1
+Banks,2
+Construction & Materials,3
+Basic Resources,4
+Media,5
+Retail,6
+Personal & Household Goods,7
+Real Estate,8
+Health Care,9
+Financial Services,10
+Chemicals,11
+Travel & Leisure,12
+Utilities,13
+Insurance,14
+Automobiles & Parts,15
+Technology,16
+Oil & Gas,17
+Telecommunications,18

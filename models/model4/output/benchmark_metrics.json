@@ -1,0 +1,44 @@
+{
+  "accuracy": 0.5728068289986796,
+  "precision": 0.5654538613274347,
+  "recall": 0.6119220660636946,
+  "f1": 0.587770969385941,
+  "roc_auc": 0.6085108262191691,
+  "confusion_matrix": [
+    [
+      43681,
+      38111
+    ],
+    [
+      31451,
+      49592
+    ]
+  ],
+  "train_ratio": 0.8,
+  "test_rows": 162835,
+  "feature_columns": [
+    "encode_sector",
+    "return_1d",
+    "return_3d",
+    "return_5d",
+    "return_10d",
+    "return_20d",
+    "ma_5",
+    "ma_20",
+    "ma_50",
+    "price_vs_ma20",
+    "ma5_vs_ma20",
+    "volatility_5d",
+    "volatility_20d",
+    "volatility_change",
+    "rolling_max_20d",
+    "drawdown_20d",
+    "volume_ma_5",
+    "volume_ma_20",
+    "volume_ratio_5_20",
+    "volume_change_1d",
+    "daily_range",
+    "body_ratio",
+    "close_position"
+  ]
+}
